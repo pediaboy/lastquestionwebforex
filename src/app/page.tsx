@@ -17,15 +17,15 @@ export default function HomePage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden section-pad !py-0 text-center">
+      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-14 pt-28 text-center sm:pt-32 md:px-10 md:pt-36 lg:px-20">
         <div className="pointer-events-none absolute inset-0 bg-grid-glow" />
         <div
           className="animate-glowPulse pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-electric/20 blur-[120px]"
           aria-hidden="true"
         />
 
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="animate-float mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium tracking-wide text-neon">
+        <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-5 sm:gap-6">
+          <div className="animate-float inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium tracking-wide text-neon">
             <span className="h-1.5 w-1.5 rounded-full bg-neon" />
             Trading Community Sejak {SITE.foundedYear}
           </div>
@@ -35,11 +35,11 @@ export default function HomePage() {
             <span className="heading-gradient block">Sejak 2021</span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-white/60 md:text-lg">
+          <p className="max-w-2xl text-balance text-sm leading-relaxed text-white/60 sm:text-base md:text-lg">
             {SITE.description}
           </p>
 
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+          <div className="mt-2 flex flex-col gap-4 sm:mt-4 sm:flex-row">
             <GlowButton href="/vip" icon={<ArrowRight size={18} />}>
               Gabung VIP
             </GlowButton>
@@ -48,7 +48,7 @@ export default function HomePage() {
             </GlowButton>
           </div>
 
-          <div className="mt-20 grid w-full max-w-3xl grid-cols-2 gap-8 md:grid-cols-4">
+          <div className="mt-6 grid w-full max-w-3xl grid-cols-2 gap-6 sm:mt-10 sm:gap-8 md:grid-cols-4">
             <Counter target={2021} label="Trading Community" />
             <Counter target={1000} suffix="+" label="Member" />
             <Counter target={2} label="Forex & Crypto" />
