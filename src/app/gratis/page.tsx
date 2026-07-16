@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Gift, ArrowRight } from "lucide-react";
+import { Gift, ArrowRight, Send, MessageCircle, ImageUp } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
-import { BROKER_IFRAME_SRC, SITE } from "@/lib/constants";
+import { BROKER_IFRAME_SRC, SITE, waLink } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Gabung Gratis",
@@ -11,10 +11,30 @@ export const metadata: Metadata = {
     "Gabung komunitas LASTQUESTION FOREX secara gratis dengan deposit minimal USD 50 melalui broker partner.",
 };
 
+const FREE_BENEFITS = [
+  "Analisa Harian",
+  "Materi VIP",
+  "Update Forex",
+  "Update Crypto",
+  "Community Discussion",
+  "Weekly Market Outlook",
+];
+
+const CONFIRM_MESSAGE = `Halo Admin LASTQUESTION FOREX.
+
+Saya telah berhasil melakukan registrasi broker.
+
+Berikut saya lampirkan screenshot bukti registrasi.
+
+Mohon dilakukan verifikasi.
+
+Terima kasih.`;
+
 export default function GratisPage() {
   return (
     <PageTransition>
       <section className="section-pad pt-36 md:pt-44">
+        {/* INTRO */}
         <div className="mx-auto max-w-3xl text-center">
           <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-electric/10 text-neon">
             <Gift size={22} />
@@ -30,27 +50,62 @@ export default function GratisPage() {
             syarat melakukan deposit minimal <strong>USD 50</strong> melalui
             broker partner resmi kami.
           </p>
-          <div className="mt-8 flex justify-center">
-            <GlowButton
-              href={SITE.telegramBot}
-              target="_blank"
-              icon={<ArrowRight size={18} />}
-            >
-              Gabung Gratis
-            </GlowButton>
-          </div>
         </div>
 
-        <div className="mx-auto mt-20 max-w-3xl" id="registrasi-broker">
-          <GlassCard glow className="p-6 md:p-10">
-            <h2 className="font-display text-xl font-bold text-white md:text-2xl">
+        {/* PREMIUM INFO CARD - AKSES VIP GRATIS */}
+        <div className="mx-auto mt-10 max-w-2xl">
+          <GlassCard glow className="glow-border p-7 text-left md:p-9">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neon">
+              Akses VIP Gratis
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-white/60 md:text-base">
+              Deposit minimal <strong className="text-white/85">USD 50</strong>{" "}
+              melalui broker partner resmi untuk mendapatkan akses komunitas
+              VIP tanpa biaya membership bulanan.
+            </p>
+            <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {FREE_BENEFITS.map((b) => (
+                <div key={b} className="flex items-center gap-2.5">
+                  <span className="text-neon">✔</span>
+                  <span className="text-sm text-white/75">{b}</span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <GlowButton
+            href={SITE.telegramBot}
+            target="_blank"
+            icon={<ArrowRight size={18} />}
+          >
+            Gabung Gratis
+          </GlowButton>
+        </div>
+
+        {/* REGISTRASI BROKER */}
+        <div className="mx-auto mt-24 max-w-3xl" id="registrasi-broker">
+          <div className="text-center">
+            <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
+              Langkah Selanjutnya
+            </p>
+            <h2 className="mt-3 font-display text-2xl font-bold text-white md:text-3xl">
               Registrasi Broker Partner
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-white/55">
-              Lakukan registrasi melalui formulir berikut untuk membuka akun
-              trading pada broker partner.
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/55">
+              Buka akun trading melalui broker partner resmi menggunakan
+              formulir berikut. Setelah proses registrasi selesai, lakukan
+              deposit minimal USD 50 agar akun dapat diverifikasi dan
+              memperoleh akses ke komunitas {SITE.name}.
             </p>
-            <div className="mt-6 overflow-hidden rounded-xl border border-white/10">
+          </div>
+
+          <GlassCard
+            glow
+            className="glow-border mt-8 overflow-hidden rounded-[24px] p-6 shadow-glow-strong md:p-10"
+          >
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
               <iframe
                 src={BROKER_IFRAME_SRC}
                 width="100%"
@@ -59,6 +114,47 @@ export default function GratisPage() {
                 className="block w-full"
               />
             </div>
+
+            <div className="mt-6 rounded-xl border border-electric/20 bg-white/[0.03] p-5">
+              <p className="text-sm font-medium text-white/80">
+                Sudah selesai melakukan registrasi?
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/55">
+                Silakan kirim screenshot halaman berhasil registrasi kepada
+                Admin agar akun dapat diverifikasi lebih cepat.
+              </p>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* KONFIRMASI REGISTRASI */}
+        <div className="mx-auto mt-16 max-w-2xl">
+          <GlassCard
+            glow
+            className="glow-border flex flex-col items-center gap-5 p-8 text-center md:p-12"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-electric/10 text-neon">
+              <Send size={24} />
+            </div>
+            <h2 className="font-display text-xl font-bold text-white md:text-2xl">
+              Konfirmasi Registrasi
+            </h2>
+            <p className="max-w-md text-sm leading-relaxed text-white/55">
+              Apabila Anda telah berhasil membuat akun broker, silakan kirim
+              screenshot bukti registrasi kepada Admin untuk proses
+              verifikasi.
+            </p>
+            <GlowButton
+              href={waLink(CONFIRM_MESSAGE)}
+              target="_blank"
+              icon={<ImageUp size={18} />}
+              className="w-full sm:w-auto"
+            >
+              Kirim Screenshot Registrasi
+            </GlowButton>
+            <p className="flex items-center gap-1.5 text-xs text-white/35">
+              <MessageCircle size={13} /> Terhubung langsung ke WhatsApp Admin
+            </p>
           </GlassCard>
         </div>
       </section>

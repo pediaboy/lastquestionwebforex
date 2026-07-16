@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ArrowRight, TrendingUp, ShieldCheck, Users, LineChart } from "lucide-react";
 import GlowButton from "@/components/GlowButton";
 import GlassCard from "@/components/GlassCard";
-import Counter from "@/components/Counter";
 import { BENEFITS, SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -12,6 +10,13 @@ export const metadata: Metadata = {
 };
 
 const benefitIcons = [TrendingUp, LineChart, ShieldCheck, Users];
+
+const HERO_STATS = [
+  { value: "2021", label: "Trading Community" },
+  { value: "Forex & Crypto", label: "Fokus Analisis" },
+  { value: "Weekly", label: "Analysis" },
+  { value: "Community", label: "Support" },
+];
 
 export default function HomePage() {
   return (
@@ -24,35 +29,44 @@ export default function HomePage() {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-5 sm:gap-6">
+        <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-6 sm:gap-7">
           <div className="animate-float inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium tracking-wide text-neon">
             <span className="h-1.5 w-1.5 rounded-full bg-neon" />
-            Trading Community Sejak {SITE.foundedYear}
+            Trading Community Since {SITE.foundedYear}
           </div>
 
-          <h1 className="max-w-4xl font-display text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            Trading Forex & Crypto
-            <span className="heading-gradient block">Sejak 2021</span>
+          <h1 className="max-w-4xl font-display text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
+            Master the Global Market with{" "}
+            <span className="heading-gradient">Professional Forex & Crypto Education</span>
           </h1>
 
           <p className="max-w-2xl text-balance text-sm leading-relaxed text-white/60 sm:text-base md:text-lg">
-            {SITE.description}
+            {SITE.name} merupakan komunitas edukasi trading yang berfokus pada
+            Forex dan Crypto sejak tahun {SITE.foundedYear}. Kami membantu
+            trader memahami market melalui analisis teknikal, fundamental,
+            manajemen risiko, serta psikologi trading yang terstruktur.
           </p>
 
-          <div className="mt-2 flex flex-col gap-4 sm:mt-4 sm:flex-row">
+          <div className="mt-2 grid w-full max-w-3xl grid-cols-2 gap-4 sm:mt-4 sm:gap-5 md:grid-cols-4">
+            {HERO_STATS.map((stat) => (
+              <GlassCard key={stat.label} className="flex flex-col items-center gap-1 px-3 py-5">
+                <span className="font-display text-lg font-bold text-white sm:text-xl">
+                  {stat.value}
+                </span>
+                <span className="text-[11px] uppercase tracking-widest text-white/45 sm:text-xs">
+                  {stat.label}
+                </span>
+              </GlassCard>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 sm:mt-6 sm:flex-row">
             <GlowButton href="/vip" icon={<ArrowRight size={18} />}>
               Gabung VIP
             </GlowButton>
             <GlowButton href="/gratis" variant="secondary">
               Gabung Gratis
             </GlowButton>
-          </div>
-
-          <div className="mt-6 grid w-full max-w-3xl grid-cols-2 gap-6 sm:mt-10 sm:gap-8 md:grid-cols-4">
-            <Counter target={2021} label="Trading Community" />
-            <Counter target={1000} suffix="+" label="Member" />
-            <Counter target={2} label="Forex & Crypto" />
-            <Counter target={7} label="Analisa / Minggu" />
           </div>
         </div>
       </section>
