@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { isAdminRequest } from "@/lib/adminAuth";
 import { getAnnouncements, saveAnnouncements } from "@/lib/announcements";
+import { broadcastToGroup } from "@/lib/telegramNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,14 @@ export async function POST(req: NextRequest) {
   const newItem = { id: randomUUID(), title, body: content, created_at: new Date().toISOString() };
   items.push(newItem);
   await saveAnnouncements(items);
+
+  // Auto-broadcast the new announcement to the community Telegram group.
+  const text =
+    `<b>📢 PENGUMUMAN LASTQUESTION FOREX</b>\n\n` +
+    `<b>${title}</b>\n\n${content}\n\n` +
+    `Cek selengkapnya di Dashboard Member → Pengumuman.`;
+  broadcastToGroup(text).catch((err) => console.error("Broadcast failed:", err));
+
   return NextResponse.json({ ok: true, item: newItem });
 }
 

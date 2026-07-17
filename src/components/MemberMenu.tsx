@@ -32,7 +32,7 @@ export default function MemberMenu() {
   }
 
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <div className="relative z-50 shrink-0 pointer-events-auto" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Menu akun member"

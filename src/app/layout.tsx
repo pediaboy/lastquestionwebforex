@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { ConditionalNavbar, ConditionalFooter } from "@/components/ConditionalChrome";
 import LoadingScreen from "@/components/LoadingScreen";
 import ParticleBackground from "@/components/ParticleBackground";
 import { SITE } from "@/lib/constants";
@@ -72,9 +71,9 @@ export default function RootLayout({
         />
         <LoadingScreen />
         <ParticleBackground />
-        <Navbar />
+        <ConditionalNavbar />
         <main className="relative z-10">{children}</main>
-        <Footer />
+        <ConditionalFooter />
       </body>
     </html>
   );

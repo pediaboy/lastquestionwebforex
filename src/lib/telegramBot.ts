@@ -4,6 +4,8 @@ import { randomUUID } from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getSignals, saveSignals, Signal } from "@/lib/signals";
 import { getBotSession, setBotSession, clearBotSession, BotSessionPayload } from "@/lib/botSession";
+import { getAnnouncements, saveAnnouncements } from "@/lib/announcements";
+import { broadcastToGroup } from "@/lib/telegramNotify";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN as string;
 
@@ -24,7 +26,15 @@ function mainMenu() {
   return Markup.inlineKeyboard([
     [Markup.button.callback("Tambah Sinyal", "menu:add_signal")],
     [Markup.button.callback("Sinyal Aktif", "menu:list_signals")],
+    [Markup.button.callback("Kirim Pengumuman", "menu:add_announcement")],
     [Markup.button.callback("Kelola Member", "menu:members")],
+  ]);
+}
+
+function announcementConfirmMenu() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback("Publikasikan & Broadcast", "announcement:confirm")],
+    [Markup.button.callback("Batal", "menu:main")],
   ]);
 }
 
@@ -138,6 +148,51 @@ export function createBot() {
       mainMenu()
     );
     await ctx.answerCbQuery("Tersimpan");
+  });
+
+  // ---------- ADD ANNOUNCEMENT WIZARD ----------
+  bot.action("menu:add_announcement", async (ctx) => {
+    const chatId = String(ctx.chat!.id);
+    if (!isAdmin(chatId)) return ctx.answerCbQuery();
+    await setBotSession(chatId, "awaiting_ann_title", {});
+    await ctx.editMessageText("Ketik judul pengumuman:");
+    await ctx.answerCbQuery();
+  });
+
+  bot.action("announcement:confirm", async (ctx) => {
+    const chatId = String(ctx.chat!.id);
+    if (!isAdmin(chatId)) return ctx.answerCbQuery();
+    const session = await getBotSession(chatId);
+    const p = session?.payload;
+
+    if (!p?.ann_title || !p?.ann_body) {
+      await ctx.editMessageText("Data tidak lengkap. Silakan ulangi.", mainMenu());
+      await ctx.answerCbQuery();
+      return;
+    }
+
+    const items = await getAnnouncements();
+    const newItem = {
+      id: randomUUID(),
+      title: p.ann_title,
+      body: p.ann_body,
+      created_at: new Date().toISOString(),
+    };
+    items.push(newItem);
+    await saveAnnouncements(items);
+    await clearBotSession(chatId);
+
+    const text =
+      `<b>📢 PENGUMUMAN LASTQUESTION FOREX</b>\n\n` +
+      `<b>${newItem.title}</b>\n\n${newItem.body}\n\n` +
+      `Cek selengkapnya di Dashboard Member → Pengumuman.`;
+    await broadcastToGroup(text);
+
+    await ctx.editMessageText(
+      `Pengumuman berhasil dipublikasikan dan di-broadcast ke grup.\n\nJudul: ${newItem.title}`,
+      mainMenu()
+    );
+    await ctx.answerCbQuery("Terkirim");
   });
 
   // ---------- LIST SIGNALS ----------
@@ -272,6 +327,22 @@ export function createBot() {
       await ctx.reply(
         `Konfirmasi Sinyal:\n\nPair: ${payload.pair}\nArah: ${payload.direction}\nEntry: ${payload.entry}\nTP: ${payload.tp}\nSL: ${value}`,
         confirmMenu()
+      );
+      return;
+    }
+
+    if (session.state === "awaiting_ann_title") {
+      await setBotSession(chatId, "awaiting_ann_body", { ann_title: value });
+      await ctx.reply(`Judul: ${value}\n\nKetik isi pengumuman:`);
+      return;
+    }
+
+    if (session.state === "awaiting_ann_body") {
+      const payload: BotSessionPayload = { ...session.payload, ann_body: value };
+      await setBotSession(chatId, "ann_confirming", payload);
+      await ctx.reply(
+        `Konfirmasi Pengumuman:\n\nJudul: ${payload.ann_title}\n\n${value}`,
+        announcementConfirmMenu()
       );
       return;
     }

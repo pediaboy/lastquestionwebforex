@@ -50,8 +50,11 @@ export default function RegisterPage() {
         return;
       }
 
-      // Create profile + auto-confirm email (no verification needed) + notify admin via Telegram
-      await fetch("/api/auth-event", {
+      // Create profile + auto-confirm email (no verification needed) + notify admin via Telegram.
+      // IMPORTANT: check the response — if the profile fails to save server-side,
+      // surface it instead of silently continuing (this is what caused the
+      // "user not saved to database" bug: the fetch result was never checked).
+      const authEventRes = await fetch("/api/auth-event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,6 +65,16 @@ export default function RegisterPage() {
           phone,
         }),
       });
+
+      if (!authEventRes.ok) {
+        const errJson = await authEventRes.json().catch(() => ({}));
+        setError(
+          errJson.error ||
+            "Akun berhasil dibuat tapi profil gagal tersimpan. Silakan hubungi Admin via WhatsApp."
+        );
+        setLoading(false);
+        return;
+      }
 
       // Email is now auto-confirmed server-side — sign in immediately.
       const { error: signInError } = await supabase.auth.signInWithPassword({
