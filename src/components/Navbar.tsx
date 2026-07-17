@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, UserRound } from "lucide-react";
 import { NAV_LINKS, SITE } from "@/lib/constants";
 import GlowButton from "./GlowButton";
 
@@ -55,7 +55,13 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden items-center gap-3 lg:flex">
+          <Link
+            href="/login"
+            className="flex items-center gap-1.5 text-sm font-medium text-white/70 transition-colors hover:text-white"
+          >
+            <UserRound size={16} /> Login
+          </Link>
           <GlowButton href="/vip" className="!py-2.5">
             Gabung VIP
           </GlowButton>
@@ -86,6 +92,12 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/login"
+              className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white"
+            >
+              <UserRound size={16} /> Login / Daftar
+            </Link>
             <div className="pt-3">
               <GlowButton href="/vip" className="w-full">
                 Gabung VIP

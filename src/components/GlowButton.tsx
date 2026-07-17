@@ -9,6 +9,8 @@ type Props = {
   className?: string;
   target?: string;
   icon?: ReactNode;
+  type?: "button" | "submit";
+  disabled?: boolean;
 };
 
 export default function GlowButton({
@@ -19,9 +21,11 @@ export default function GlowButton({
   className = "",
   target,
   icon,
+  type = "button",
+  disabled = false,
 }: Props) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap";
+    "inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none";
 
   const variants: Record<string, string> = {
     primary:
@@ -43,7 +47,7 @@ export default function GlowButton({
   }
 
   return (
-    <button onClick={onClick} className={classes}>
+    <button type={type} onClick={onClick} disabled={disabled} className={classes}>
       {icon}
       {children}
     </button>
