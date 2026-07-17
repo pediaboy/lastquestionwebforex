@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Gift, ArrowRight, Send, MessageCircle, ImageUp } from "lucide-react";
+import { Gift, ArrowRight, Send, MessageCircle, ImageUp, Check } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
@@ -66,7 +66,7 @@ export default function GratisPage() {
             <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {FREE_BENEFITS.map((b) => (
                 <div key={b} className="flex items-center gap-2.5">
-                  <span className="text-neon">✔</span>
+                  <Check size={15} className="shrink-0 text-neon" />
                   <span className="text-sm text-white/75">{b}</span>
                 </div>
               ))}

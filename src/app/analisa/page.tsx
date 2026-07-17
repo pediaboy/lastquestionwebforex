@@ -1,14 +1,11 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import { LineChart, Calendar, Newspaper, Eye } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import GlowButton from "@/components/GlowButton";
-
-export const metadata: Metadata = {
-  title: "Analisa Market",
-  description:
-    "Analisis harian, weekly outlook, dan market review Forex, Gold, serta Crypto dari LASTQUESTION FOREX.",
-};
+import TradingViewChart from "@/components/TradingViewChart";
 
 const ANALYSIS_TYPES = [
   {
@@ -33,7 +30,16 @@ const ANALYSIS_TYPES = [
   },
 ];
 
+const SYMBOLS = [
+  { label: "XAU/USD", value: "OANDA:XAUUSD" },
+  { label: "EUR/USD", value: "OANDA:EURUSD" },
+  { label: "GBP/USD", value: "OANDA:GBPUSD" },
+  { label: "BTC/USD", value: "BINANCE:BTCUSDT" },
+];
+
 export default function AnalisaPage() {
+  const [symbol, setSymbol] = useState(SYMBOLS[0].value);
+
   return (
     <PageTransition>
       <section className="section-pad pt-36 md:pt-44">
@@ -49,6 +55,26 @@ export default function AnalisaPage() {
             structure, dan konteks fundamental — disampaikan secara rutin ke
             seluruh member.
           </p>
+        </div>
+
+        {/* FULL-WIDTH REALTIME CHART */}
+        <div className="mx-auto mt-12 w-full max-w-[1600px]">
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+            {SYMBOLS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSymbol(s.value)}
+                className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                  symbol === s.value
+                    ? "border-electric/50 bg-electric/10 text-neon"
+                    : "border-white/10 text-white/60 hover:text-white"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <TradingViewChart symbol={symbol} height={700} />
         </div>
 
         <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2">

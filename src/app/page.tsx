@@ -22,14 +22,14 @@ export default function HomePage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-14 pt-28 text-center sm:pt-32 md:px-10 md:pt-36 lg:px-20">
+      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-10 pt-24 text-center sm:pt-28 md:px-10 md:pt-32 lg:px-20">
         <div className="pointer-events-none absolute inset-0 bg-grid-glow" />
         <div
           className="animate-glowPulse pointer-events-none absolute left-1/2 top-1/3 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-electric/20 blur-[120px]"
           aria-hidden="true"
         />
 
-        <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-6 sm:gap-7">
+        <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center gap-4 sm:gap-5">
           <div className="animate-float inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium tracking-wide text-neon">
             <span className="h-1.5 w-1.5 rounded-full bg-neon" />
             Trading Community Since {SITE.foundedYear}
@@ -47,9 +47,9 @@ export default function HomePage() {
             manajemen risiko, serta psikologi trading yang terstruktur.
           </p>
 
-          <div className="mt-2 grid w-full max-w-3xl grid-cols-2 gap-4 sm:mt-4 sm:gap-5 md:grid-cols-4">
+          <div className="mt-1 grid w-full max-w-3xl grid-cols-2 gap-3 sm:mt-2 sm:gap-4 md:grid-cols-4">
             {HERO_STATS.map((stat) => (
-              <GlassCard key={stat.label} className="flex flex-col items-center gap-1 px-3 py-5">
+              <GlassCard key={stat.label} className="flex flex-col items-center gap-1 px-3 py-4">
                 <span className="font-display text-lg font-bold text-white sm:text-xl">
                   {stat.value}
                 </span>
@@ -60,7 +60,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mt-4 flex flex-col gap-4 sm:mt-6 sm:flex-row">
+          <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row">
             <GlowButton href="/vip" icon={<ArrowRight size={18} />}>
               Gabung VIP
             </GlowButton>
@@ -72,7 +72,7 @@ export default function HomePage() {
       </section>
 
       {/* QUICK ABOUT STRIP */}
-      <section className="section-pad !py-20">
+      <section className="section-pad !py-14 md:!py-16">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
             Mengapa LASTQUESTION FOREX

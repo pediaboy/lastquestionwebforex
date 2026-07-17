@@ -77,14 +77,14 @@ export async function POST(req: NextRequest) {
       ip_address: req.headers.get("x-forwarded-for") || null,
     });
 
-    const label = type === "register" ? "🆕 REGISTRASI MEMBER BARU" : "🔐 MEMBER LOGIN";
+    const label = type === "register" ? "REGISTRASI MEMBER BARU" : "MEMBER LOGIN";
     const text =
       `<b>${label}</b>\n\n` +
-      `👤 Username: <b>@${username}</b>\n` +
-      `📧 Email: ${email}` +
-      (fullName ? `\n📛 Nama: ${fullName}` : "") +
-      (phone ? `\n📱 Telepon: ${phone}` : "") +
-      `\n🕒 ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`;
+      `Username: <b>@${username}</b>\n` +
+      `Email: ${email}` +
+      (fullName ? `\nNama: ${fullName}` : "") +
+      (phone ? `\nTelepon: ${phone}` : "") +
+      `\nWaktu: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`;
 
     await sendTelegramNotification(text);
 

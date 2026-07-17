@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Crown, User, Loader2, ShieldCheck } from "lucide-react";
+import { Crown, User, Loader2, ShieldCheck } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
+import MemberMenu from "@/components/MemberMenu";
 import PageTransition from "@/components/PageTransition";
 import { supabase } from "@/lib/supabaseClient";
-import { SITE, waLink } from "@/lib/constants";
+import { SITE, waLink, isVipStatus } from "@/lib/constants";
 
 type Profile = {
   id: string;
@@ -61,11 +62,6 @@ export default function DashboardMemberPage() {
     };
   }, [router]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
   if (loading) {
     return (
       <section className="flex min-h-[80vh] items-center justify-center">
@@ -74,7 +70,7 @@ export default function DashboardMemberPage() {
     );
   }
 
-  const isVip = profile?.vip_status === "vip";
+  const isVip = isVipStatus(profile?.vip_status);
   const displayName = profile?.full_name || profile?.email?.split("@")[0] || "Member";
 
   return (
@@ -87,15 +83,10 @@ export default function DashboardMemberPage() {
                 Dashboard Member
               </p>
               <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
-                Halo, {displayName} 👋
+                Halo, {displayName}
               </h1>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm text-white/70 transition-colors hover:border-red-400/40 hover:text-red-300"
-            >
-              <LogOut size={16} /> Logout
-            </button>
+            <MemberMenu />
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">

@@ -90,3 +90,7 @@ export const FOCUS_AREAS = [
 
 export const BROKER_IFRAME_SRC =
   "https://ma.valetax.com/embed/register/block/Wx7aDnkGc1qc%2Fvw4nQRo2iUVqM6yrg%2Bto38T2btOGOXt%2Bm1CEd2IBn83c26UII77f67NdAs0AQ4lpigT24UVQ2FQxz6r67jvgCUWt5eNG4Cb%2FpUyD2OOWzmsHhAxkbf5?lang=id&background=dark";
+
+export function isVipStatus(status?: string | null) {
+  return status === "vip" || status === "admin";
+}
