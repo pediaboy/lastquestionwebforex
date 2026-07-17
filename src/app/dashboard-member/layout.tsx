@@ -2,6 +2,7 @@
 
 import DashboardSidebar from "@/components/DashboardSidebar";
 import MemberMenu from "@/components/MemberMenu";
+import MemberBottomNav from "@/components/MemberBottomNav";
 import { SITE } from "@/lib/constants";
 
 export default function DashboardMemberLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,8 @@ export default function DashboardMemberLayout({ children }: { children: React.Re
           <MemberMenu />
         </header>
 
-        <main className="px-4 pb-16 pt-4 md:px-6">{children}</main>
+        <main className="px-4 pb-24 pt-4 md:px-6 lg:pb-16">{children}</main>
+        <MemberBottomNav />
       </div>
     </div>
   );

@@ -15,6 +15,9 @@ import {
   Megaphone,
   Headset,
   Send,
+  LayoutDashboard,
+  Trophy,
+  Save,
 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
@@ -59,13 +62,26 @@ type ChatThread = {
   last_message_at: string;
 };
 
+type StatCard = { value: string; delta: string; label: string };
+type DashboardStatsState = {
+  win_rate: StatCard;
+  total_trade: StatCard;
+  profit_bulan: StatCard;
+  kelas_selesai: StatCard;
+};
+
+type LeaderboardRow = { id: string; name: string; pips: number; trades: number; win_rate: number };
+type LeaderboardState = { weekly: LeaderboardRow[]; monthly: LeaderboardRow[] };
+
 export default function AdminPage() {
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   const [checking, setChecking] = useState(true);
 
-  const [tab, setTab] = useState<"signals" | "members" | "announcements" | "chat">("signals");
+  const [tab, setTab] = useState<"signals" | "members" | "announcements" | "chat" | "dashboard" | "leaderboard">(
+    "signals"
+  );
   const [signals, setSignals] = useState<Signal[]>([]);
   const [members, setMembers] = useState<MemberUser[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -73,6 +89,15 @@ export default function AdminPage() {
   const [activeChatUser, setActiveChatUser] = useState<string | null>(null);
   const [chatReply, setChatReply] = useState("");
   const [loadingData, setLoadingData] = useState(false);
+
+  const [dashStats, setDashStats] = useState<DashboardStatsState | null>(null);
+  const [dashSaving, setDashSaving] = useState(false);
+  const [dashSaved, setDashSaved] = useState(false);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderboardState>({ weekly: [], monthly: [] });
+  const [lbPeriod, setLbPeriod] = useState<"weekly" | "monthly">("weekly");
+  const [lbSaving, setLbSaving] = useState(false);
+  const [lbSaved, setLbSaved] = useState(false);
 
   const [form, setForm] = useState({ pair: "", direction: "BUY", entry: "", tp: "", sl: "", note: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -101,20 +126,26 @@ export default function AdminPage() {
 
   async function loadData(key: string) {
     setLoadingData(true);
-    const [sigRes, memRes, annRes, chatRes] = await Promise.all([
+    const [sigRes, memRes, annRes, chatRes, statsRes, lbRes] = await Promise.all([
       fetch("/api/admin/signals", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/users", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/announcements", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/chat", { headers: { "x-admin-key": key } }),
+      fetch("/api/admin/dashboard-stats", { headers: { "x-admin-key": key } }),
+      fetch("/api/admin/leaderboard", { headers: { "x-admin-key": key } }),
     ]);
     const sigJson = await sigRes.json();
     const memJson = await memRes.json();
     const annJson = await annRes.json();
     const chatJson = await chatRes.json();
+    const statsJson = await statsRes.json();
+    const lbJson = await lbRes.json();
     setSignals(sigJson.signals || []);
     setMembers(memJson.users || []);
     setAnnouncements(annJson.items || []);
     setChatThreads(chatJson.threads || []);
+    if (statsJson.stats) setDashStats(statsJson.stats);
+    if (lbJson.weekly || lbJson.monthly) setLeaderboard({ weekly: lbJson.weekly || [], monthly: lbJson.monthly || [] });
     setLoadingData(false);
   }
 
@@ -200,6 +231,69 @@ export default function AdminPage() {
       body: JSON.stringify({ user_id: userId, message }),
     });
     await loadData(adminKey);
+  }
+
+  function updateStatField(key: keyof DashboardStatsState, field: keyof StatCard, value: string) {
+    setDashStats((prev) => (prev ? { ...prev, [key]: { ...prev[key], [field]: value } } : prev));
+  }
+
+  async function handleSaveStats() {
+    if (!adminKey || !dashStats) return;
+    setDashSaving(true);
+    setDashSaved(false);
+    await fetch("/api/admin/dashboard-stats", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify(dashStats),
+    });
+    setDashSaving(false);
+    setDashSaved(true);
+    setTimeout(() => setDashSaved(false), 2000);
+  }
+
+  function updateLbRow(idx: number, field: keyof LeaderboardRow, value: string) {
+    setLeaderboard((prev) => {
+      const rows = [...prev[lbPeriod]];
+      const row = { ...rows[idx] };
+      if (field === "name") row.name = value;
+      else (row[field] as number) = Number(value) || 0;
+      rows[idx] = row;
+      return { ...prev, [lbPeriod]: rows };
+    });
+  }
+
+  function addLbRow() {
+    setLeaderboard((prev) => {
+      const rows = [...prev[lbPeriod], { id: crypto.randomUUID(), name: "", pips: 0, trades: 0, win_rate: 0 }];
+      return { ...prev, [lbPeriod]: rows };
+    });
+  }
+
+  function removeLbRow(idx: number) {
+    setLeaderboard((prev) => {
+      const rows = prev[lbPeriod].filter((_, i) => i !== idx);
+      return { ...prev, [lbPeriod]: rows };
+    });
+  }
+
+  async function handleSaveLeaderboard() {
+    if (!adminKey) return;
+    setLbSaving(true);
+    setLbSaved(false);
+    // sort each list by pips descending so ranks stay accurate
+    const sorted: LeaderboardState = {
+      weekly: [...leaderboard.weekly].sort((a, b) => b.pips - a.pips),
+      monthly: [...leaderboard.monthly].sort((a, b) => b.pips - a.pips),
+    };
+    setLeaderboard(sorted);
+    await fetch("/api/admin/leaderboard", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify(sorted),
+    });
+    setLbSaving(false);
+    setLbSaved(true);
+    setTimeout(() => setLbSaved(false), 2000);
   }
 
   if (checking) {
@@ -288,6 +382,22 @@ export default function AdminPage() {
               }`}
             >
               <Headset size={15} /> Chat Member
+            </button>
+            <button
+              onClick={() => setTab("dashboard")}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                tab === "dashboard" ? "bg-electric/20 text-neon" : "text-white/60"
+              }`}
+            >
+              <LayoutDashboard size={15} /> Dashboard
+            </button>
+            <button
+              onClick={() => setTab("leaderboard")}
+              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                tab === "leaderboard" ? "bg-electric/20 text-neon" : "text-white/60"
+              }`}
+            >
+              <Trophy size={15} /> Leaderboard
             </button>
           </div>
 
@@ -612,6 +722,168 @@ export default function AdminPage() {
                     </form>
                   </>
                 )}
+              </GlassCard>
+            </div>
+          )}
+
+          {!loadingData && tab === "dashboard" && (
+            <div className="mt-8 max-w-3xl">
+              <GlassCard glow className="p-6">
+                <h2 className="font-display text-base font-semibold text-white">
+                  Kartu Statistik Dashboard Member
+                </h2>
+                <p className="mt-1 text-sm text-white/50">
+                  4 kartu ini tampil di halaman Home dashboard member (Win Rate, Total Trade, dst).
+                </p>
+
+                {!dashStats ? (
+                  <div className="mt-6 flex justify-center">
+                    <Loader2 className="animate-spin text-neon" size={22} />
+                  </div>
+                ) : (
+                  <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {(Object.keys(dashStats) as (keyof DashboardStatsState)[]).map((key) => (
+                      <div key={key} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-neon/80">
+                          {key === "win_rate" && "Win Rate"}
+                          {key === "total_trade" && "Total Trade"}
+                          {key === "profit_bulan" && "Profit Bulan Ini"}
+                          {key === "kelas_selesai" && "Kelas Selesai"}
+                        </p>
+                        <div className="mt-3 space-y-2">
+                          <div>
+                            <label className="text-[11px] text-white/40">Label</label>
+                            <input
+                              value={dashStats[key].label}
+                              onChange={(e) => updateStatField(key, "label", e.target.value)}
+                              className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-electric/50"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] text-white/40">Nilai Utama (contoh: 87%)</label>
+                            <input
+                              value={dashStats[key].value}
+                              onChange={(e) => updateStatField(key, "value", e.target.value)}
+                              className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-electric/50"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] text-white/40">Delta/Badge (contoh: +2.3%)</label>
+                            <input
+                              value={dashStats[key].delta}
+                              onChange={(e) => updateStatField(key, "delta", e.target.value)}
+                              className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-electric/50"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-6 flex items-center gap-3">
+                  <GlowButton
+                    onClick={handleSaveStats}
+                    disabled={dashSaving || !dashStats}
+                    icon={dashSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  >
+                    {dashSaving ? "Menyimpan..." : "Simpan Perubahan"}
+                  </GlowButton>
+                  {dashSaved && <span className="text-xs text-emerald-400">Tersimpan! Live di dashboard member.</span>}
+                </div>
+              </GlassCard>
+            </div>
+          )}
+
+          {!loadingData && tab === "leaderboard" && (
+            <div className="mt-8 max-w-3xl">
+              <GlassCard glow className="p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-base font-semibold text-white">
+                      Leaderboard Member
+                    </h2>
+                    <p className="mt-1 text-sm text-white/50">
+                      Atur peringkat yang tampil di halaman Leaderboard member (diurutkan otomatis berdasarkan pips saat disimpan).
+                    </p>
+                  </div>
+                  <div className="flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+                    {(["weekly", "monthly"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setLbPeriod(p)}
+                        className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                          lbPeriod === p ? "bg-electric/20 text-neon" : "text-white/50"
+                        }`}
+                      >
+                        {p === "weekly" ? "Mingguan" : "Bulanan"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  {leaderboard[lbPeriod].map((row, idx) => (
+                    <div
+                      key={row.id}
+                      className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                    >
+                      <input
+                        value={row.name}
+                        onChange={(e) => updateLbRow(idx, "name", e.target.value)}
+                        placeholder="Nama member"
+                        className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-electric/50"
+                      />
+                      <input
+                        type="number"
+                        value={row.pips}
+                        onChange={(e) => updateLbRow(idx, "pips", e.target.value)}
+                        placeholder="Pips"
+                        className="w-20 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
+                      />
+                      <input
+                        type="number"
+                        value={row.trades}
+                        onChange={(e) => updateLbRow(idx, "trades", e.target.value)}
+                        placeholder="Trades"
+                        className="w-20 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
+                      />
+                      <input
+                        type="number"
+                        value={row.win_rate}
+                        onChange={(e) => updateLbRow(idx, "win_rate", e.target.value)}
+                        placeholder="WR %"
+                        className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
+                      />
+                      <button
+                        onClick={() => removeLbRow(idx)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/50 hover:border-red-400/50 hover:text-red-400"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                  {leaderboard[lbPeriod].length === 0 && (
+                    <p className="py-4 text-center text-sm text-white/40">Belum ada baris. Klik &quot;Tambah Baris&quot;.</p>
+                  )}
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={addLbRow}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/10 px-4 py-2 text-xs font-semibold text-white/70 hover:border-electric/40 hover:text-white"
+                  >
+                    <Plus size={14} /> Tambah Baris
+                  </button>
+                  <GlowButton
+                    onClick={handleSaveLeaderboard}
+                    disabled={lbSaving}
+                    icon={lbSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  >
+                    {lbSaving ? "Menyimpan..." : "Simpan Perubahan"}
+                  </GlowButton>
+                  {lbSaved && <span className="text-xs text-emerald-400">Tersimpan! Live di dashboard member.</span>}
+                </div>
               </GlassCard>
             </div>
           )}
