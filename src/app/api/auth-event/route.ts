@@ -53,6 +53,33 @@ export async function POST(req: NextRequest) {
     let profileSaved = true;
     let profileError: string | null = null;
 
+    if (type === "login") {
+      // Self-healing: if a user somehow logged in without ever getting a
+      // forex_profiles row (e.g. registered before this pipeline existed,
+      // or a past insert failed silently), create it now so they show up
+      // in the admin panel. Never touches vip_status if the row already exists.
+      const { data: existing } = await supabaseAdmin
+        .from("forex_profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!existing) {
+        const { error: healError } = await supabaseAdmin.from("forex_profiles").insert({
+          id: userId,
+          email,
+          full_name: fullName || null,
+          phone: phone || null,
+          vip_status: "free",
+        });
+        if (healError) {
+          console.error("[auth-event] Self-heal profile insert failed:", healError.message);
+        } else {
+          console.log(`[auth-event] Self-healed missing profile for ${email} (${userId})`);
+        }
+      }
+    }
+
     if (type === "register") {
       // Auto-confirm the email so the member can log in immediately —
       // registration is documentation-only, no email verification required.

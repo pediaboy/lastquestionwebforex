@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { LineChart, Calendar, Newspaper, Eye } from "lucide-react";
+import { LineChart, Calendar, Newspaper, Eye, Maximize2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import GlowButton from "@/components/GlowButton";
 import TradingViewChart from "@/components/TradingViewChart";
+import { CHART_SIZE_OPTIONS } from "@/lib/constants";
 
 const ANALYSIS_TYPES = [
   {
@@ -39,6 +40,7 @@ const SYMBOLS = [
 
 export default function AnalisaPage() {
   const [symbol, setSymbol] = useState(SYMBOLS[0].value);
+  const [size, setSize] = useState(CHART_SIZE_OPTIONS[2]);
 
   return (
     <PageTransition>
@@ -74,7 +76,25 @@ export default function AnalisaPage() {
               </button>
             ))}
           </div>
-          <TradingViewChart symbol={symbol} height={700} />
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-white/45">
+              <Maximize2 size={13} /> Ukuran:
+            </span>
+            {CHART_SIZE_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => setSize(opt)}
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  size.label === opt.label
+                    ? "border-electric/50 bg-electric/10 text-neon"
+                    : "border-white/10 text-white/60 hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <TradingViewChart symbol={symbol} height={size.height} />
         </div>
 
         <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2">

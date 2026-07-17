@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { LineChart } from "lucide-react";
+import { LineChart, Maximize2 } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
 import TradingViewChart from "@/components/TradingViewChart";
+import { CHART_SIZE_OPTIONS } from "@/lib/constants";
 
 const SYMBOLS = [
   { label: "XAU/USD", value: "OANDA:XAUUSD" },
@@ -16,6 +17,7 @@ const SYMBOLS = [
 
 export default function MemberChartPage() {
   const [symbol, setSymbol] = useState(SYMBOLS[0].value);
+  const [size, setSize] = useState(CHART_SIZE_OPTIONS[2]);
 
   return (
     <PageTransition>
@@ -48,8 +50,27 @@ export default function MemberChartPage() {
           ))}
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-white/45">
+            <Maximize2 size={13} /> Ukuran Chart:
+          </span>
+          {CHART_SIZE_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={() => setSize(opt)}
+              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                size.label === opt.label
+                  ? "border-electric/50 bg-electric/10 text-neon"
+                  : "border-white/10 text-white/60 hover:text-white"
+              }`}
+            >
+              {opt.label} <span className="hidden text-white/35 sm:inline">· {opt.sublabel}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="mt-5 w-full">
-          <TradingViewChart symbol={symbol} height={820} />
+          <TradingViewChart symbol={symbol} height={size.height} />
         </div>
       </section>
     </PageTransition>

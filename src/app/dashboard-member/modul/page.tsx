@@ -87,7 +87,7 @@ export default function ModulTradingPage() {
               </GlassCard>
             );
             return mod.vip ? (
-              <PremiumGate key={mod.title} isVip={isVip}>
+              <PremiumGate key={mod.title} isVip={isVip} compact>
                 {card}
               </PremiumGate>
             ) : (

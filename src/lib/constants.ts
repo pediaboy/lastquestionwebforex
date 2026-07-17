@@ -94,3 +94,12 @@ export const BROKER_IFRAME_SRC =
 export function isVipStatus(status?: string | null) {
   return status === "vip" || status === "admin";
 }
+
+// Chart height presets (width stays fluid/100%), labeled by familiar
+// video-resolution shorthand so it's easy to pick a size that fits the screen.
+export const CHART_SIZE_OPTIONS = [
+  { label: "540p", sublabel: "Ringkas", height: 480 },
+  { label: "720p", sublabel: "Standar", height: 650 },
+  { label: "900p", sublabel: "Besar", height: 820 },
+  { label: "1080p", sublabel: "Full", height: 980 },
+];

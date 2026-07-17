@@ -90,7 +90,7 @@ export default function KatalogKelasPage() {
               </GlassCard>
             );
             return cls.vip ? (
-              <PremiumGate key={cls.title} isVip={isVip}>
+              <PremiumGate key={cls.title} isVip={isVip} compact>
                 {card}
               </PremiumGate>
             ) : (

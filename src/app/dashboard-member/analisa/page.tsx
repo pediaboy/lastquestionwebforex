@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Calendar, LineChart as LineChartIcon, Newspaper, Eye } from "lucide-react";
+import { Loader2, Calendar, LineChart as LineChartIcon, Newspaper, Eye, Maximize2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import PremiumGate from "@/components/PremiumGate";
 import TradingViewChart from "@/components/TradingViewChart";
 import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus } from "@/lib/constants";
+import { isVipStatus, CHART_SIZE_OPTIONS } from "@/lib/constants";
 
 const ANALYSIS_TYPES = [
   {
@@ -37,6 +37,7 @@ export default function MemberAnalisaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isVip, setIsVip] = useState(false);
+  const [size, setSize] = useState(CHART_SIZE_OPTIONS[1]);
 
   useEffect(() => {
     let active = true;
@@ -82,7 +83,25 @@ export default function MemberAnalisaPage() {
         <div className="mt-6">
           <PremiumGate isVip={isVip}>
             <div className="space-y-6">
-              <TradingViewChart symbol="OANDA:XAUUSD" height={600} />
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-medium text-white/45">
+                  <Maximize2 size={13} /> Ukuran Chart:
+                </span>
+                {CHART_SIZE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => setSize(opt)}
+                    className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                      size.label === opt.label
+                        ? "border-electric/50 bg-electric/10 text-neon"
+                        : "border-white/10 text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <TradingViewChart symbol="OANDA:XAUUSD" height={size.height} />
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {ANALYSIS_TYPES.map((item) => (
                   <GlassCard key={item.title} className="p-6" glow>
