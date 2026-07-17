@@ -180,7 +180,7 @@ export default function DashboardMemberPage() {
             </p>
             <GlowButton
               href={waLink(
-                "Halo Admin, saya ingin join VIP Promo Rp250.000, mohon info invoice-nya."
+                "Halo Admin, saya ingin upgrade ke Member VIP. Mohon info paket & invoice-nya."
               )}
               target="_blank"
             >

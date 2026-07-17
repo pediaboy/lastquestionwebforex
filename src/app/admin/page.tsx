@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useRef, useState, FormEvent } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -18,6 +18,8 @@ import {
   LayoutDashboard,
   Trophy,
   Save,
+  MoreVertical,
+  X,
 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
@@ -73,15 +75,112 @@ type DashboardStatsState = {
 type LeaderboardRow = { id: string; name: string; pips: number; trades: number; win_rate: number };
 type LeaderboardState = { weekly: LeaderboardRow[]; monthly: LeaderboardRow[] };
 
+type VipPackage = {
+  id: string;
+  name: string;
+  price: number;
+  duration_days: number;
+  tier: string;
+  popular: boolean;
+  features: string[];
+};
+
+type AdminTabKey =
+  | "signals"
+  | "members"
+  | "announcements"
+  | "chat"
+  | "dashboard"
+  | "leaderboard"
+  | "vip";
+
+const ADMIN_TABS: { key: AdminTabKey; label: string; icon: typeof Radar }[] = [
+  { key: "signals", label: "Sinyal", icon: Radar },
+  { key: "members", label: "Member", icon: Users },
+  { key: "announcements", label: "Pengumuman", icon: Megaphone },
+  { key: "chat", label: "Chat Member", icon: Headset },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "leaderboard", label: "Leaderboard", icon: Trophy },
+  { key: "vip", label: "VIP Paket", icon: Crown },
+];
+
+function AdminTabMenu({
+  tab,
+  setTab,
+  tabMenuOpen,
+  setTabMenuOpen,
+}: {
+  tab: AdminTabKey;
+  setTab: (tab: AdminTabKey) => void;
+  tabMenuOpen: boolean;
+  setTabMenuOpen: (open: boolean) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const active = ADMIN_TABS.find((t) => t.key === tab) ?? ADMIN_TABS[0];
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setTabMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [setTabMenuOpen]);
+
+  return (
+    <div className="relative z-30 w-fit" ref={ref}>
+      <button
+        onClick={() => setTabMenuOpen(!tabMenuOpen)}
+        aria-haspopup="menu"
+        aria-expanded={tabMenuOpen}
+        className="flex items-center gap-2.5 rounded-full border border-white/10 bg-base-black py-2 pl-4 pr-2 text-sm font-medium text-white transition-colors hover:border-electric/40"
+      >
+        <active.icon size={15} className="text-neon" />
+        {active.label}
+        <span className="flex h-7 w-7 items-center justify-center rounded-full text-white/60">
+          <MoreVertical size={17} />
+        </span>
+      </button>
+
+      {tabMenuOpen && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-40 mt-2 w-56 overflow-hidden rounded-xl border border-white/15 shadow-2xl shadow-black/70"
+          style={{ backgroundColor: "#0a0e14" }}
+        >
+          {ADMIN_TABS.map((item) => (
+            <button
+              key={item.key}
+              role="menuitem"
+              onClick={() => {
+                setTab(item.key);
+                setTabMenuOpen(false);
+              }}
+              className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-white/10 ${
+                item.key === tab ? "text-neon" : "text-white/80"
+              }`}
+            >
+              <item.icon size={16} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   const [checking, setChecking] = useState(true);
 
-  const [tab, setTab] = useState<"signals" | "members" | "announcements" | "chat" | "dashboard" | "leaderboard">(
-    "signals"
-  );
+  const [tab, setTab] = useState<
+    "signals" | "members" | "announcements" | "chat" | "dashboard" | "leaderboard" | "vip"
+  >("signals");
+  const [tabMenuOpen, setTabMenuOpen] = useState(false);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [members, setMembers] = useState<MemberUser[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -98,6 +197,12 @@ export default function AdminPage() {
   const [lbPeriod, setLbPeriod] = useState<"weekly" | "monthly">("weekly");
   const [lbSaving, setLbSaving] = useState(false);
   const [lbSaved, setLbSaved] = useState(false);
+
+  const [vipPackages, setVipPackages] = useState<VipPackage[]>([]);
+  const [vipFeatureInputs, setVipFeatureInputs] = useState<Record<string, string>>({});
+  const [vipSaving, setVipSaving] = useState(false);
+  const [vipSaved, setVipSaved] = useState(false);
+  const [vipError, setVipError] = useState("");
 
   const [form, setForm] = useState({ pair: "", direction: "BUY", entry: "", tp: "", sl: "", note: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -126,13 +231,14 @@ export default function AdminPage() {
 
   async function loadData(key: string) {
     setLoadingData(true);
-    const [sigRes, memRes, annRes, chatRes, statsRes, lbRes] = await Promise.all([
+    const [sigRes, memRes, annRes, chatRes, statsRes, lbRes, vipRes] = await Promise.all([
       fetch("/api/admin/signals", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/users", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/announcements", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/chat", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/dashboard-stats", { headers: { "x-admin-key": key } }),
       fetch("/api/admin/leaderboard", { headers: { "x-admin-key": key } }),
+      fetch("/api/admin/vip-packages", { headers: { "x-admin-key": key } }),
     ]);
     const sigJson = await sigRes.json();
     const memJson = await memRes.json();
@@ -140,12 +246,14 @@ export default function AdminPage() {
     const chatJson = await chatRes.json();
     const statsJson = await statsRes.json();
     const lbJson = await lbRes.json();
+    const vipJson = await vipRes.json();
     setSignals(sigJson.signals || []);
     setMembers(memJson.users || []);
     setAnnouncements(annJson.items || []);
     setChatThreads(chatJson.threads || []);
     if (statsJson.stats) setDashStats(statsJson.stats);
     if (lbJson.weekly || lbJson.monthly) setLeaderboard({ weekly: lbJson.weekly || [], monthly: lbJson.monthly || [] });
+    if (Array.isArray(vipJson.packages)) setVipPackages(vipJson.packages);
     setLoadingData(false);
   }
 
@@ -296,6 +404,88 @@ export default function AdminPage() {
     setTimeout(() => setLbSaved(false), 2000);
   }
 
+  function updateVipField(id: string, field: keyof VipPackage, value: string | boolean) {
+    setVipPackages((prev) =>
+      prev.map((pkg) => {
+        if (pkg.id !== id) return pkg;
+        if (field === "price" || field === "duration_days") {
+          return { ...pkg, [field]: Number(value) || 0 };
+        }
+        if (field === "popular") {
+          return { ...pkg, popular: value === "true" || value === true };
+        }
+        return { ...pkg, [field]: value };
+      })
+    );
+  }
+
+  function addVipPackage() {
+    const id = crypto.randomUUID();
+    setVipPackages((prev) => [
+      ...prev,
+      { id, name: "", price: 0, duration_days: 30, tier: "Reguler", popular: false, features: [] },
+    ]);
+  }
+
+  function removeVipPackage(id: string) {
+    setVipPackages((prev) => prev.filter((pkg) => pkg.id !== id));
+  }
+
+  function addVipFeature(id: string) {
+    const value = (vipFeatureInputs[id] || "").trim();
+    if (!value) return;
+    setVipPackages((prev) =>
+      prev.map((pkg) => (pkg.id === id ? { ...pkg, features: [...pkg.features, value] } : pkg))
+    );
+    setVipFeatureInputs((prev) => ({ ...prev, [id]: "" }));
+  }
+
+  function removeVipFeature(id: string, idx: number) {
+    setVipPackages((prev) =>
+      prev.map((pkg) =>
+        pkg.id === id ? { ...pkg, features: pkg.features.filter((_, i) => i !== idx) } : pkg
+      )
+    );
+  }
+
+  async function handleSaveVipPackages() {
+    if (!adminKey) return;
+    setVipError("");
+    for (const pkg of vipPackages) {
+      if (!pkg.name.trim()) {
+        setVipError("Nama paket tidak boleh kosong.");
+        return;
+      }
+      if (pkg.price <= 0) {
+        setVipError(`Harga paket "${pkg.name}" harus lebih dari 0.`);
+        return;
+      }
+      if (pkg.duration_days <= 0) {
+        setVipError(`Durasi paket "${pkg.name}" harus lebih dari 0 hari.`);
+        return;
+      }
+    }
+    setVipSaving(true);
+    setVipSaved(false);
+    try {
+      const res = await fetch("/api/admin/vip-packages", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ packages: vipPackages }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setVipError(json.error || "Gagal menyimpan paket VIP.");
+      } else {
+        setVipSaved(true);
+        setTimeout(() => setVipSaved(false), 2000);
+      }
+    } catch {
+      setVipError("Gagal menyimpan paket VIP. Coba lagi.");
+    }
+    setVipSaving(false);
+  }
+
   if (checking) {
     return (
       <section className="flex min-h-[80vh] items-center justify-center">
@@ -350,55 +540,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex gap-2 rounded-full border border-white/10 bg-base-black p-1 w-fit">
-            <button
-              onClick={() => setTab("signals")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "signals" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <Radar size={15} /> Sinyal
-            </button>
-            <button
-              onClick={() => setTab("members")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "members" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <Users size={15} /> Member
-            </button>
-            <button
-              onClick={() => setTab("announcements")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "announcements" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <Megaphone size={15} /> Pengumuman
-            </button>
-            <button
-              onClick={() => setTab("chat")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "chat" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <Headset size={15} /> Chat Member
-            </button>
-            <button
-              onClick={() => setTab("dashboard")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "dashboard" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <LayoutDashboard size={15} /> Dashboard
-            </button>
-            <button
-              onClick={() => setTab("leaderboard")}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                tab === "leaderboard" ? "bg-electric/20 text-neon" : "text-white/60"
-              }`}
-            >
-              <Trophy size={15} /> Leaderboard
-            </button>
+          <div className="mt-8">
+            <AdminTabMenu tab={tab} setTab={setTab} tabMenuOpen={tabMenuOpen} setTabMenuOpen={setTabMenuOpen} />
           </div>
 
           {loadingData && (
@@ -826,41 +969,60 @@ export default function AdminPage() {
                   {leaderboard[lbPeriod].map((row, idx) => (
                     <div
                       key={row.id}
-                      className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                      className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
                     >
-                      <input
-                        value={row.name}
-                        onChange={(e) => updateLbRow(idx, "name", e.target.value)}
-                        placeholder="Nama member"
-                        className="min-w-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-electric/50"
-                      />
-                      <input
-                        type="number"
-                        value={row.pips}
-                        onChange={(e) => updateLbRow(idx, "pips", e.target.value)}
-                        placeholder="Pips"
-                        className="w-20 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
-                      />
-                      <input
-                        type="number"
-                        value={row.trades}
-                        onChange={(e) => updateLbRow(idx, "trades", e.target.value)}
-                        placeholder="Trades"
-                        className="w-20 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
-                      />
-                      <input
-                        type="number"
-                        value={row.win_rate}
-                        onChange={(e) => updateLbRow(idx, "win_rate", e.target.value)}
-                        placeholder="WR %"
-                        className="w-16 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center text-sm text-white outline-none focus:border-electric/50"
-                      />
-                      <button
-                        onClick={() => removeLbRow(idx)}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/50 hover:border-red-400/50 hover:text-red-400"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-electric/10 text-[11px] font-bold text-neon">
+                          {idx + 1}
+                        </span>
+                        <button
+                          onClick={() => removeLbRow(idx)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                          aria-label="Hapus baris"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+
+                      <div className="mt-2">
+                        <label className="text-[11px] text-white/40">Nama Member</label>
+                        <input
+                          value={row.name}
+                          onChange={(e) => updateLbRow(idx, "name", e.target.value)}
+                          placeholder="Nama member"
+                          className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                        />
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-[11px] text-white/40">Pips</label>
+                          <input
+                            type="number"
+                            value={row.pips}
+                            onChange={(e) => updateLbRow(idx, "pips", e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-sm text-white outline-none focus:border-electric/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-white/40">Trades</label>
+                          <input
+                            type="number"
+                            value={row.trades}
+                            onChange={(e) => updateLbRow(idx, "trades", e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-sm text-white outline-none focus:border-electric/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-white/40">Win Rate %</label>
+                          <input
+                            type="number"
+                            value={row.win_rate}
+                            onChange={(e) => updateLbRow(idx, "win_rate", e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-center text-sm text-white outline-none focus:border-electric/50"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                   {leaderboard[lbPeriod].length === 0 && (
@@ -885,6 +1047,164 @@ export default function AdminPage() {
                   {lbSaved && <span className="text-xs text-emerald-400">Tersimpan! Live di dashboard member.</span>}
                 </div>
               </GlassCard>
+            </div>
+          )}
+
+          {!loadingData && tab === "vip" && (
+            <div className="mt-8 max-w-3xl space-y-5">
+              {vipError && (
+                <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                  {vipError}
+                </div>
+              )}
+
+              {vipPackages.map((pkg) => (
+                <GlassCard key={pkg.id} glow className="p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-neon/80">
+                      {pkg.name || "Paket Baru"}
+                    </p>
+                    <button
+                      onClick={() => removeVipPackage(pkg.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                      aria-label="Hapus paket"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-[11px] text-white/40">Nama Paket</label>
+                    <input
+                      value={pkg.name}
+                      onChange={(e) => updateVipField(pkg.id, "name", e.target.value)}
+                      placeholder="contoh: VIP Basic"
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-white/40">Harga (IDR)</label>
+                      <input
+                        type="number"
+                        value={pkg.price}
+                        onChange={(e) => updateVipField(pkg.id, "price", e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-white/40">Durasi (hari)</label>
+                      <input
+                        type="number"
+                        value={pkg.duration_days}
+                        onChange={(e) => updateVipField(pkg.id, "duration_days", e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-white/40">Tier</label>
+                      <select
+                        value={pkg.tier}
+                        onChange={(e) => updateVipField(pkg.id, "tier", e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                      >
+                        <option value="Reguler">Reguler</option>
+                        <option value="Basic">Basic</option>
+                        <option value="Promo">Promo</option>
+                        <option value="Pro">Pro</option>
+                        <option value="Renewal">Renewal</option>
+                        <option value="Premium">Premium</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-white/40">Popular?</label>
+                      <select
+                        value={pkg.popular ? "true" : "false"}
+                        onChange={(e) => updateVipField(pkg.id, "popular", e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                      >
+                        <option value="false">Tidak</option>
+                        <option value="true">Ya</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-[11px] text-white/40">Fitur</label>
+                    <div className="mt-1 flex gap-2">
+                      <input
+                        value={vipFeatureInputs[pkg.id] || ""}
+                        onChange={(e) =>
+                          setVipFeatureInputs((prev) => ({ ...prev, [pkg.id]: e.target.value }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addVipFeature(pkg.id);
+                          }
+                        }}
+                        placeholder="Tambah fitur..."
+                        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none focus:border-electric/50"
+                      />
+                      <button
+                        onClick={() => addVipFeature(pkg.id)}
+                        className="flex items-center gap-1.5 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 hover:border-electric/40 hover:text-white"
+                      >
+                        <Plus size={14} /> Add
+                      </button>
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      {pkg.features.map((f, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5"
+                        >
+                          <span className="truncate text-sm text-white/80">{f}</span>
+                          <button
+                            onClick={() => removeVipFeature(pkg.id, idx)}
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/40 hover:bg-red-500/10 hover:text-red-400"
+                            aria-label="Hapus fitur"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {pkg.features.length === 0 && (
+                        <p className="py-2 text-center text-xs text-white/35">Belum ada fitur.</p>
+                      )}
+                    </div>
+                  </div>
+                </GlassCard>
+              ))}
+
+              {vipPackages.length === 0 && (
+                <GlassCard className="p-8 text-center text-sm text-white/50">
+                  Belum ada paket VIP. Klik &quot;Tambah Paket Baru&quot; untuk membuat paket pertama.
+                </GlassCard>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={addVipPackage}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/70 hover:border-electric/40 hover:text-white"
+                >
+                  <Plus size={15} /> Tambah Paket Baru
+                </button>
+                <GlowButton
+                  onClick={handleSaveVipPackages}
+                  disabled={vipSaving}
+                  className="flex-1 sm:flex-none"
+                  icon={vipSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                >
+                  {vipSaving ? "Menyimpan..." : "Update Paket"}
+                </GlowButton>
+                {vipSaved && <span className="text-xs text-emerald-400">Tersimpan! Live di halaman VIP.</span>}
+              </div>
             </div>
           )}
         </div>
