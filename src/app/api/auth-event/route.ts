@@ -47,6 +47,15 @@ export async function POST(req: NextRequest) {
     const username = email.split("@")[0];
 
     if (type === "register") {
+      // Auto-confirm the email so the member can log in immediately —
+      // registration is documentation-only, no email verification required.
+      const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email_confirm: true,
+      });
+      if (confirmError) {
+        console.error("Failed to auto-confirm user:", confirmError.message);
+      }
+
       // Upsert member profile (bypasses RLS via service role — safe, server-only)
       await supabaseAdmin.from("forex_profiles").upsert(
         {

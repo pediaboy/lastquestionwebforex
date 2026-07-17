@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, Mail, Lock, User, Phone, Loader2, CheckCircle2 } from "lucide-react";
+import { UserPlus, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
@@ -17,8 +17,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
-  const [needsConfirm, setNeedsConfirm] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,7 +33,12 @@ export default function RegisterPage() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(
+          signUpError.message.includes("already registered") ||
+            signUpError.message.includes("already been registered")
+            ? "Email ini sudah terdaftar. Silakan login."
+            : signUpError.message
+        );
         setLoading(false);
         return;
       }
@@ -47,7 +50,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Create profile + fire Telegram notification (server-side, service role)
+      // Create profile + auto-confirm email (no verification needed) + notify admin via Telegram
       await fetch("/api/auth-event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,47 +63,24 @@ export default function RegisterPage() {
         }),
       });
 
-      setDone(true);
-      setNeedsConfirm(!data.session);
+      // Email is now auto-confirmed server-side — sign in immediately.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (data.session) {
-        setTimeout(() => router.push("/dashboard-member"), 1200);
+      if (signInError) {
+        setError("Akun berhasil dibuat. Silakan login.");
+        setLoading(false);
+        setTimeout(() => router.push("/login"), 1200);
+        return;
       }
+
+      router.push("/dashboard-member");
     } catch {
       setError("Terjadi kesalahan. Silakan coba lagi.");
-    } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    return (
-      <PageTransition>
-        <section className="section-pad flex min-h-[70vh] items-center pt-36 md:pt-44">
-          <GlassCard glow className="mx-auto max-w-md p-8 text-center md:p-10">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neon/10 text-neon">
-              <CheckCircle2 size={26} />
-            </div>
-            <h1 className="font-display text-xl font-bold text-white md:text-2xl">
-              Registrasi Berhasil
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-white/60">
-              {needsConfirm
-                ? "Silakan cek email kamu untuk verifikasi akun sebelum login ke dashboard member."
-                : "Akun kamu sudah aktif. Mengalihkan ke dashboard..."}
-            </p>
-            {needsConfirm && (
-              <Link
-                href="/login"
-                className="mt-6 inline-block text-sm font-semibold text-neon hover:underline"
-              >
-                Ke halaman Login →
-              </Link>
-            )}
-          </GlassCard>
-        </section>
-      </PageTransition>
-    );
   }
 
   return (
