@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Crown, User, Loader2, ShieldCheck } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
-import MemberMenu from "@/components/MemberMenu";
 import PageTransition from "@/components/PageTransition";
 import { supabase } from "@/lib/supabaseClient";
 import { SITE, waLink, isVipStatus } from "@/lib/constants";
@@ -75,18 +74,15 @@ export default function DashboardMemberPage() {
 
   return (
     <PageTransition>
-      <section className="section-pad pt-32 md:pt-40">
+      <section className="section-pad pt-4">
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
-                Dashboard Member
-              </p>
-              <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
-                Halo, {displayName}
-              </h1>
-            </div>
-            <MemberMenu />
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
+              Dashboard Member
+            </p>
+            <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
+              Halo, {displayName}
+            </h1>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">

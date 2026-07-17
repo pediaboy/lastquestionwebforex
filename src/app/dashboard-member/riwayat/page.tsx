@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { History, Loader2, LogIn, UserPlus } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
-import MemberMenu from "@/components/MemberMenu";
 import PageTransition from "@/components/PageTransition";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -61,18 +60,15 @@ export default function HistoryJurnalPage() {
 
   return (
     <PageTransition>
-      <section className="section-pad pt-32 md:pt-40">
+      <section className="section-pad pt-4">
         <div className="mx-auto max-w-3xl">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
-                Dashboard Member
-              </p>
-              <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
-                History Jurnal
-              </h1>
-            </div>
-            <MemberMenu />
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-neon/80">
+              Dashboard Member
+            </p>
+            <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
+              Track Record
+            </h1>
           </div>
 
           <div className="mt-8 space-y-3">
