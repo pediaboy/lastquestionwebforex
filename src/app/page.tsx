@@ -3,6 +3,7 @@ import { ArrowRight, TrendingUp, ShieldCheck, Users, Brain, BookOpen, Radar } fr
 import GlowButton from "@/components/GlowButton";
 import GlassCard from "@/components/GlassCard";
 import AngularCard from "@/components/AngularCard";
+import TypewriterText from "@/components/TypewriterText";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -81,8 +82,12 @@ export default function HomePage() {
             <span className="italic text-neon">Trade Better.</span>
           </h1>
 
-          <p className="text-xs uppercase tracking-[0.3em] text-white/40 sm:text-sm">
-            Fokus: Forex &amp; Crypto
+          <p className="flex items-center gap-1.5 text-xs uppercase tracking-[0.3em] text-white/40 sm:text-sm">
+            Fokus:
+            <TypewriterText
+              words={["Forex & Crypto", "Analisa Teknikal", "Manajemen Risiko", "Psikologi Trading"]}
+              className="text-neon"
+            />
           </p>
 
           <p className="max-w-2xl text-balance text-sm leading-relaxed text-white/60 sm:text-base md:text-lg">

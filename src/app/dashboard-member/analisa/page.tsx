@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Calendar, LineChart as LineChartIcon, Newspaper, Eye, Maximize2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import PremiumGate from "@/components/PremiumGate";
 import TradingViewChart from "@/components/TradingViewChart";
-import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus, CHART_SIZE_OPTIONS } from "@/lib/constants";
+import { CHART_SIZE_OPTIONS } from "@/lib/constants";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 const ANALYSIS_TYPES = [
   {
@@ -19,7 +18,7 @@ const ANALYSIS_TYPES = [
   {
     icon: LineChartIcon,
     title: "Weekly Outlook",
-    desc: "Gambaran besar pasar selama sepekan ke depan, termasuk skenario utama dan level struktural jangka menengah.",
+    desc: "Gambaran besar pasar selama sepekan ke depan, termasuk skenario utama and level struktural jangka menengah.",
   },
   {
     icon: Newspaper,
@@ -34,35 +33,14 @@ const ANALYSIS_TYPES = [
 ];
 
 export default function MemberAnalisaPage() {
-  const router = useRouter();
+  const { isVip, accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [isVip, setIsVip] = useState(false);
   const [size, setSize] = useState(CHART_SIZE_OPTIONS[1]);
 
   useEffect(() => {
-    let active = true;
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("forex_profiles")
-        .select("vip_status")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (!active) return;
-      setIsVip(isVipStatus(profile?.vip_status));
-      setLoading(false);
-    }
-    load();
-    return () => {
-      active = false;
-    };
-  }, [router]);
+    if (!accessToken) return;
+    setLoading(false);
+  }, [accessToken]);
 
   if (loading) {
     return (

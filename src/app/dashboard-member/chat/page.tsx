@@ -1,50 +1,42 @@
 "use client";
 
 import { useEffect, useRef, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Headset, Loader2, Send } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
-import { supabase } from "@/lib/supabaseClient";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 type ChatMsg = { id: string; sender: "user" | "admin"; message: string; created_at: string };
 
 export default function ChatAdminPage() {
-  const router = useRouter();
+  const { accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
   const [thread, setThread] = useState<ChatMsg[]>([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  async function refresh(accessToken: string) {
-    const res = await fetch("/api/chat", { headers: { Authorization: `Bearer ${accessToken}` } });
+  async function refresh(tokenToUse: string | null) {
+    if (!tokenToUse) return;
+    const res = await fetch("/api/chat", { headers: { Authorization: `Bearer ${tokenToUse}` } });
     const json = await res.json();
     setThread(json.thread || []);
   }
 
   useEffect(() => {
+    if (!accessToken) return;
     let active = true;
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
+      await refresh(accessToken);
       if (!active) return;
-      setToken(session.access_token);
-      await refresh(session.access_token);
       setLoading(false);
     }
     load();
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,11 +44,11 @@ export default function ChatAdminPage() {
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
-    if (!token || !message.trim()) return;
+    if (!accessToken || !message.trim()) return;
     setSending(true);
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ message }),
     });
     const json = await res.json();

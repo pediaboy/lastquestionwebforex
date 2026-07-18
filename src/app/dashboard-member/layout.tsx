@@ -1,11 +1,23 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import MemberMenu from "@/components/MemberMenu";
 import MemberBottomNav from "@/components/MemberBottomNav";
 import { SITE } from "@/lib/constants";
+import { MemberAuthProvider, useMemberAuth } from "@/lib/MemberAuthContext";
 
-export default function DashboardMemberLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { loading } = useMemberAuth();
+
+  if (loading) {
+    return (
+      <section className="flex min-h-[100svh] items-center justify-center">
+        <Loader2 className="animate-spin text-neon" size={28} />
+      </section>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <DashboardSidebar />
@@ -25,5 +37,13 @@ export default function DashboardMemberLayout({ children }: { children: React.Re
         <MemberBottomNav />
       </div>
     </div>
+  );
+}
+
+export default function DashboardMemberLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <MemberAuthProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </MemberAuthProvider>
   );
 }

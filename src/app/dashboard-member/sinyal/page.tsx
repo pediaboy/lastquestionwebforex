@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, TrendingUp, TrendingDown, Radar } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import PremiumGate from "@/components/PremiumGate";
-import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus } from "@/lib/constants";
+import TypewriterText from "@/components/TypewriterText";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 type SignalItem = {
   id: string;
@@ -21,39 +20,20 @@ type SignalItem = {
 };
 
 export default function SinyalPage() {
-  const router = useRouter();
+  const { isVip, accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [isVip, setIsVip] = useState(false);
   const [signals, setSignals] = useState<SignalItem[]>([]);
 
   useEffect(() => {
+    if (!accessToken) return;
     let active = true;
 
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("forex_profiles")
-        .select("vip_status")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      const vip = isVipStatus(profile?.vip_status);
-
       const res = await fetch("/api/signals", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const json = await res.json();
-
       if (!active) return;
-      setIsVip(vip);
       setSignals(json.signals || []);
       setLoading(false);
     }
@@ -62,7 +42,7 @@ export default function SinyalPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken]);
 
   if (loading) {
     return (
@@ -83,6 +63,12 @@ export default function SinyalPage() {
             <h1 className="mt-2 font-display text-2xl font-bold text-white md:text-3xl">
               Sinyal Trading
             </h1>
+            <p className="mt-2 flex items-center gap-1.5 text-xs uppercase tracking-[0.25em] text-white/40">
+              <TypewriterText
+                words={["Update Real-time", "Akurasi Terjaga", "Analisa Profesional", "Entry, TP & SL Jelas"]}
+                className="text-neon"
+              />
+            </p>
           </div>
 
           <div className="mt-8">

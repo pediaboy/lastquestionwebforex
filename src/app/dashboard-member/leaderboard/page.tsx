@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Trophy, Loader2, Medal } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
-import { supabase } from "@/lib/supabaseClient";
 import type { LeaderboardRow } from "@/lib/leaderboard";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 const PODIUM_STYLE: Record<number, string> = {
   0: "text-neon",
@@ -15,33 +14,13 @@ const PODIUM_STYLE: Record<number, string> = {
 };
 
 export default function LeaderboardPage() {
-  const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"weekly" | "monthly">("weekly");
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
 
   useEffect(() => {
-    let active = true;
-    async function checkAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      if (!active) return;
-      setCheckingAuth(false);
-    }
-    checkAuth();
-    return () => {
-      active = false;
-    };
-  }, [router]);
-
-  useEffect(() => {
-    if (checkingAuth) return;
+    if (!accessToken) return;
     let active = true;
     setLoading(true);
     fetch(`/api/leaderboard?period=${period}`)
@@ -55,15 +34,7 @@ export default function LeaderboardPage() {
     return () => {
       active = false;
     };
-  }, [period, checkingAuth]);
-
-  if (checkingAuth) {
-    return (
-      <section className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="animate-spin text-neon" size={28} />
-      </section>
-    );
-  }
+  }, [period, accessToken]);
 
   const top3 = rows.slice(0, 3);
   const rest = rows.slice(3);

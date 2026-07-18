@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { BookOpen, Loader2, CheckCircle2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import PremiumGate from "@/components/PremiumGate";
-import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus } from "@/lib/constants";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 const MODULES = [
   { title: "1. Pengenalan Pasar Forex", desc: "Memahami cara kerja pasar Forex, sesi trading, dan pelaku pasar.", vip: false },
@@ -21,34 +19,13 @@ const MODULES = [
 ];
 
 export default function ModulTradingPage() {
-  const router = useRouter();
+  const { isVip, accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [isVip, setIsVip] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("forex_profiles")
-        .select("vip_status")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (!active) return;
-      setIsVip(isVipStatus(profile?.vip_status));
-      setLoading(false);
-    }
-    load();
-    return () => {
-      active = false;
-    };
-  }, [router]);
+    if (!accessToken) return;
+    setLoading(false);
+  }, [accessToken]);
 
   if (loading) {
     return (

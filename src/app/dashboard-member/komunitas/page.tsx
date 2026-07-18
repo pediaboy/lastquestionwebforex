@@ -1,39 +1,30 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { MessagesSquare, Loader2, Send } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
-import { supabase } from "@/lib/supabaseClient";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 type Post = { id: string; author_name: string; message: string; created_at: string };
 
 export default function KomunitasPage() {
-  const router = useRouter();
+  const { accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
+    if (!accessToken) return;
     let active = true;
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      if (!active) return;
-      setToken(session.access_token);
       const res = await fetch("/api/community", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const json = await res.json();
+      if (!active) return;
       setPosts(json.posts || []);
       setLoading(false);
     }
@@ -41,15 +32,15 @@ export default function KomunitasPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken]);
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
-    if (!token || !message.trim()) return;
+    if (!accessToken || !message.trim()) return;
     setSending(true);
     const res = await fetch("/api/community", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ message }),
     });
     const json = await res.json();

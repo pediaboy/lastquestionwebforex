@@ -1,64 +1,27 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { User, Crown, Mail, Loader2, Save } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
 import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus } from "@/lib/constants";
-
-type Profile = {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  phone: string | null;
-  vip_status: string;
-};
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 export default function ProfilPage() {
-  const router = useRouter();
+  const { isVip, accessToken, profile, refreshProfile } = useMemberAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    let active = true;
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      const { data } = await supabase
-        .from("forex_profiles")
-        .select("id, email, full_name, phone, vip_status")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (!active) return;
-      const p = data || {
-        id: session.user.id,
-        email: session.user.email ?? null,
-        full_name: null,
-        phone: null,
-        vip_status: "free",
-      };
-      setProfile(p);
-      setFullName(p.full_name || "");
-      setPhone(p.phone || "");
-      setLoading(false);
-    }
-    load();
-    return () => {
-      active = false;
-    };
-  }, [router]);
+    if (!accessToken || !profile) return;
+    setFullName(profile.full_name || "");
+    setPhone(profile.phone || "");
+    setLoading(false);
+  }, [accessToken, profile]);
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
@@ -69,6 +32,7 @@ export default function ProfilPage() {
       .from("forex_profiles")
       .update({ full_name: fullName, phone, updated_at: new Date().toISOString() })
       .eq("id", profile.id);
+    await refreshProfile();
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -81,8 +45,6 @@ export default function ProfilPage() {
       </section>
     );
   }
-
-  const isVip = isVipStatus(profile?.vip_status);
 
   return (
     <PageTransition>

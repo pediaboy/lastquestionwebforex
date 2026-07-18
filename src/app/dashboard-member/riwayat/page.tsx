@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { History, Loader2, LogIn, UserPlus } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import PageTransition from "@/components/PageTransition";
 import { supabase } from "@/lib/supabaseClient";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 type ActivityLog = {
   id: string;
@@ -15,27 +15,20 @@ type ActivityLog = {
 };
 
 export default function HistoryJurnalPage() {
-  const router = useRouter();
+  const { accessToken, profile } = useMemberAuth();
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
 
   useEffect(() => {
+    if (!accessToken || !profile) return;
+    const userId = profile.id;
     let active = true;
 
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-
       const { data } = await supabase
         .from("forex_activity_logs")
         .select("id, action, created_at, ip_address")
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -48,7 +41,7 @@ export default function HistoryJurnalPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken, profile]);
 
   if (loading) {
     return (

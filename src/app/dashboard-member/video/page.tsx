@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { PlayCircle, Loader2 } from "lucide-react";
-import GlassCard from "@/components/GlassCard";
+import { useState } from "react";
+import { PlayCircle } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
 import PremiumGate from "@/components/PremiumGate";
-import { supabase } from "@/lib/supabaseClient";
-import { isVipStatus } from "@/lib/constants";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 const VIDEOS = [
   { title: "Pengenalan Trading Forex", youtubeId: "dQw4w9WgXcQ", vip: false },
@@ -17,43 +14,8 @@ const VIDEOS = [
 ];
 
 export default function VideoMateriPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [isVip, setIsVip] = useState(false);
+  const { isVip } = useMemberAuth();
   const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("forex_profiles")
-        .select("vip_status")
-        .eq("id", session.user.id)
-        .maybeSingle();
-      if (!alive) return;
-      setIsVip(isVipStatus(profile?.vip_status));
-      setLoading(false);
-    }
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [router]);
-
-  if (loading) {
-    return (
-      <section className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="animate-spin text-neon" size={28} />
-      </section>
-    );
-  }
 
   const current = VIDEOS[active];
   const canWatch = !current.vip || isVip;

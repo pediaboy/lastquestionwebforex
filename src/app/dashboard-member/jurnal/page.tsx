@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { NotebookPen, Loader2, Plus, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
-import { supabase } from "@/lib/supabaseClient";
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 type Entry = {
   id: string;
@@ -31,29 +30,21 @@ const emptyForm = {
 };
 
 export default function JurnalTradingPage() {
-  const router = useRouter();
+  const { accessToken } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!accessToken) return;
     let active = true;
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      if (!active) return;
-      setToken(session.access_token);
       const res = await fetch("/api/journal", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const json = await res.json();
+      if (!active) return;
       setEntries(json.entries || []);
       setLoading(false);
     }
@@ -61,15 +52,15 @@ export default function JurnalTradingPage() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken]);
 
   async function handleAdd(e: FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!accessToken) return;
     setSubmitting(true);
     const res = await fetch("/api/journal", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(form),
     });
     const json = await res.json();
@@ -79,10 +70,10 @@ export default function JurnalTradingPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!token) return;
+    if (!accessToken) return;
     await fetch(`/api/journal?id=${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Loader2,
@@ -21,17 +20,9 @@ import {
 import GlassCard from "@/components/GlassCard";
 import GlowButton from "@/components/GlowButton";
 import PageTransition from "@/components/PageTransition";
-import { supabase } from "@/lib/supabaseClient";
-import { SITE, waLink, isVipStatus } from "@/lib/constants";
+import { SITE, waLink } from "@/lib/constants";
 import type { DashboardStats } from "@/lib/dashboardStats";
-
-type Profile = {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  phone: string | null;
-  vip_status: string;
-};
+import { useMemberAuth } from "@/lib/MemberAuthContext";
 
 const QUICK_MENU = [
   { href: "/dashboard-member/chart", label: "Chart", icon: LineChart },
@@ -52,53 +43,34 @@ const STAT_ICONS: Record<keyof DashboardStats, typeof TrendingUp> = {
 };
 
 export default function DashboardMemberPage() {
-  const router = useRouter();
+  const { isVip, accessToken, profile } = useMemberAuth();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
+    if (!accessToken) return;
     let active = true;
 
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.replace("/login");
-        return;
+      try {
+        const res = await fetch("/api/dashboard-stats", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const statsRes = await res.json();
+        if (!active) return;
+        if (statsRes?.stats) setStats(statsRes.stats);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (active) setLoading(false);
       }
-
-      const [{ data }, statsRes] = await Promise.all([
-        supabase
-          .from("forex_profiles")
-          .select("id, email, full_name, phone, vip_status")
-          .eq("id", session.user.id)
-          .maybeSingle(),
-        fetch("/api/dashboard-stats").then((r) => r.json()).catch(() => null),
-      ]);
-
-      if (!active) return;
-
-      setProfile(
-        data || {
-          id: session.user.id,
-          email: session.user.email ?? null,
-          full_name: (session.user.user_metadata?.full_name as string) ?? null,
-          phone: null,
-          vip_status: "free",
-        }
-      );
-      if (statsRes?.stats) setStats(statsRes.stats);
-      setLoading(false);
     }
 
     load();
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [accessToken]);
 
   if (loading) {
     return (
@@ -108,7 +80,6 @@ export default function DashboardMemberPage() {
     );
   }
 
-  const isVip = isVipStatus(profile?.vip_status);
   const displayName = profile?.full_name || profile?.email?.split("@")[0] || "Member";
 
   return (
